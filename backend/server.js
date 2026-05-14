@@ -60,7 +60,7 @@ function getGoogleOAuthClient() {
   return new google.auth.OAuth2(
     process.env.GOOGLE_CLIENT_ID,
     process.env.GOOGLE_CLIENT_SECRET,
-    process.env.GOOGLE_REDIRECT_URI || 'http://localhost:3000/api/google/calendar/callback'
+    process.env.GOOGLE_REDIRECT_URI
   );
 }
 
@@ -2205,7 +2205,7 @@ app.get('/api/google/calendar/callback', async (req, res) => {
       updatedAt: new Date()
     });
 
-    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+    const frontendUrl = process.env.FRONTEND_URL;
     return res.redirect(`${frontendUrl}/?googleCalendar=connected`);
   } catch (error) {
     console.error('Google Calendar callback error:', error);
