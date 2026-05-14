@@ -578,16 +578,18 @@ const Profile = ({ user = {}, onLogout, onNavigateToSubscription }) => {
       return;
     }
 
+    const parseFlexDate = (dateStr) => {
+      if (!dateStr) return null;
+      const ddmmyyyy = String(dateStr).match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+      if (ddmmyyyy) return new Date(parseInt(ddmmyyyy[3]), parseInt(ddmmyyyy[2]) - 1, parseInt(ddmmyyyy[1]));
+      const d = new Date(dateStr);
+      return isNaN(d.getTime()) ? null : d;
+    };
+
     const analysisData = saveRecordSource === 'report' ? reportAnalysisResult : (saveRecordSource === 'prescription' ? aiAnalysisResult : null);
 
     // Future date validation (handles DD/MM/YYYY format from AI output)
     if (analysisData && analysisData.date) {
-      const parseFlexDate = (dateStr) => {
-        const ddmmyyyy = String(dateStr).match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
-        if (ddmmyyyy) return new Date(parseInt(ddmmyyyy[3]), parseInt(ddmmyyyy[2]) - 1, parseInt(ddmmyyyy[1]));
-        const d = new Date(dateStr);
-        return isNaN(d.getTime()) ? null : d;
-      };
       const docDate = parseFlexDate(analysisData.date);
       const now = new Date();
       if (docDate && docDate > now) {
@@ -695,7 +697,10 @@ const Profile = ({ user = {}, onLogout, onNavigateToSubscription }) => {
           analysisData: analysisData || {},
           documentUrl: savedDocumentUrl,
           prescriptionDate: analysisData?.date
-            ? (() => { try { return new Date(analysisData.date).toISOString(); } catch { return new Date().toISOString(); } })()
+            ? (() => { 
+                const d = parseFlexDate(analysisData.date);
+                return d ? d.toISOString() : new Date().toISOString();
+              })()
             : new Date().toISOString()
         })
       });
