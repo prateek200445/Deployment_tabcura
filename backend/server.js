@@ -35,13 +35,28 @@ const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 async function generateContentWithRetry(prompt, options = { retries: 2, baseDelayMs: 1500 }) {
   let attempt = 0;
+  
+  // Try primary model first
   while (attempt <= options.retries) {
     try {
-      return await model.generateContent(prompt);
+      console.log(`[AI Logic] Attempting with primary model (gemini-2.5-flash) - attempt ${attempt + 1}`);
+      return await primaryModel.generateContent(prompt);
     } catch (error) {
-      if (attempt === options.retries) throw error;
+      console.error(`[AI Logic] Primary model error (attempt ${attempt + 1}):`, error.message);
+      
+      // If we've exhausted primary retries OR it's a specific "limit exhausted" error (like 429 or 503)
+      if (attempt === options.retries || error.message?.includes('503') || error.message?.includes('429') || error.message?.includes('quota')) {
+        console.warn('[AI Logic] Switching to fallback model (gemma-4-26b-a4b-it)...');
+        try {
+          return await fallbackModel.generateContent(prompt);
+        } catch (fallbackError) {
+          console.error('[AI Logic] Fallback model also failed:', fallbackError.message);
+          throw fallbackError;
+        }
+      }
+      
       attempt++;
-      await sleep(options.baseDelayMs * attempt);
+      await new Promise(resolve => setTimeout(resolve, options.baseDelayMs * attempt));
     }
   }
 }
@@ -1166,16 +1181,26 @@ const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 // Import Gemini SDK
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 
-// Initialize Gemini API
+// Initialize Gemini API models
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-const model = genAI.getGenerativeModel({ 
-  model: "gemma-4-26b-a4b-it",
+
+const modelConfig = {
   generationConfig: {
     temperature: 0.1,
     topP: 0.1,
     topK: 16
   },
-  systemInstruction: "You are a medical document analyzer. Produce accurate, patient-safe, structured JSON for lab reports, prescriptions, and medical reports. Always extract medications with their full names, dosages, frequencies, and durations if present. Pay close attention to headings like 'Rx:', 'Medications:', or numbered lists."
+  systemInstruction: "You are a medical document analyzer. Produce accurate, patient-safe, structured JSON for lab reports, prescriptions, and medical reports."
+};
+
+const primaryModel = genAI.getGenerativeModel({ 
+  model: "gemini-2.5-flash",
+  ...modelConfig
+});
+
+const fallbackModel = genAI.getGenerativeModel({ 
+  model: "gemma-4-26b-a4b-it",
+  ...modelConfig
 });
 
 // Update the extractTextFromPDF function
@@ -1291,8 +1316,6 @@ Rules:
 2. If it's a prescription, include medication details, hospital name, disease name, precautions, and any pre-op/post-op care instructions.
 3. Always identify the document type, date, and doctor's name
 4. Format results based on document type
-5. Identify medications even if they are listed under 'Rx:', 'Medications:', 'Treatment:', or simply as a numbered list. Include the full name (e.g., 'Paracetamol 650 mg').
-6. IMPORTANT: All dates MUST be interpreted and returned in Indian format (DD/MM/YYYY). For example, 04/05/2026 is May 4th, NOT April 5th.
 
 Return a JSON object with this exact structure:
 {
@@ -1326,7 +1349,6 @@ Return a JSON object with this exact structure:
       }]
     };
 
-    console.log('[Gemini Debug] Extracted Document Text:', documentText.substring(0, 500) + '...');
     const result = await generateContentWithRetry(prompt, { retries: 2, baseDelayMs: 1500 });
     const responseText = result.response.text();
     
