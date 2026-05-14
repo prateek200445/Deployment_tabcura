@@ -1,0 +1,364 @@
+/* Doctor Portal Styles */
+.doctor-portal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.doctor-portal-header h2 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.disease-filter {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.disease-filter label {
+  font-weight: 500;
+  color: #64748b;
+}
+
+.disease-filter select {
+  padding: 8px 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  background-color: white;
+  color: #0f172a;
+  font-size: 0.95rem;
+  outline: none;
+  min-width: 200px;
+}
+
+/* Patients Table */
+.patients-table-container {
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  overflow: auto;
+}
+
+.patients-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.patients-table th,
+.patients-table td {
+  padding: 16px;
+  text-align: left;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.patients-table th {
+  font-weight: 600;
+  color: #64748b;
+  background-color: #f8fafc;
+}
+
+.patient-name {
+  font-weight: 500;
+  color: #0f172a;
+  margin-bottom: 4px;
+}
+
+.patient-email {
+  font-size: 0.85rem;
+  color: #64748b;
+}
+
+.disease-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.disease-tag {
+  background-color: #f0f7ff;
+  color: #3b82f6;
+  font-size: 0.8rem;
+  padding: 4px 8px;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+
+.view-patient-btn {
+  background-color: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 8px 12px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.view-patient-btn:hover {
+  background-color: #2563eb;
+}
+
+.no-records {
+  text-align: center;
+  color: #64748b;
+  padding: 32px 0;
+  font-style: italic;
+}
+
+/* Patient Modal Styles */
+.patient-modal {
+  max-width: 800px;
+}
+
+.patient-info-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  margin-bottom: 24px;
+}
+
+.patient-info-section {
+  background-color: #f8fafc;
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.patient-info-section h3 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-bottom: 12px;
+  color: #0f172a;
+  border-bottom: 1px solid #e2e8f0;
+  padding-bottom: 8px;
+}
+
+.info-group {
+  display: flex;
+  margin-bottom: 8px;
+}
+
+.info-group label {
+  font-weight: 500;
+  color: #64748b;
+  width: 80px;
+  flex-shrink: 0;
+}
+
+.diseases-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.disease-item {
+  border-bottom: 1px solid #e2e8f0;
+  padding-bottom: 12px;
+}
+
+.disease-item:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.disease-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.disease-header h4 {
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.diagnosed-date {
+  font-size: 0.8rem;
+  color: #64748b;
+}
+
+.disease-notes {
+  font-size: 0.9rem;
+  color: #334155;
+}
+
+.patient-documents h3 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-bottom: 16px;
+  color: #0f172a;
+}
+
+.documents-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.document-item {
+  display: flex;
+  align-items: center;
+  background-color: #f8fafc;
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.document-icon {
+  font-size: 1.5rem;
+  color: #3b82f6;
+  margin-right: 12px;
+}
+
+.document-details {
+  flex: 1;
+}
+
+.document-details h4 {
+  font-size: 0.95rem;
+  font-weight: 500;
+  margin-bottom: 4px;
+  color: #0f172a;
+}
+
+.document-details p {
+  font-size: 0.85rem;
+  color: #64748b;
+}
+
+.view-document-btn {
+  background-color: white;
+  border: 1px solid #e2e8f0;
+  color: #3b82f6;
+  border-radius: 4px;
+  padding: 6px 12px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.view-document-btn:hover {
+  background-color: #f0f7ff;
+  border-color: #bfdbfe;
+}
+
+.categorize-section {
+  background-color: #f8fafc;
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.categorize-section h3 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-bottom: 16px;
+  color: #0f172a;
+}
+
+.categorize-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.categorize-form .form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.categorize-form label {
+  font-weight: 500;
+  color: #334155;
+}
+
+.categorize-form input,
+.categorize-form textarea {
+  padding: 10px 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  outline: none;
+}
+
+.categorize-form textarea {
+  min-height: 120px;
+  resize: vertical;
+}
+
+.categorize-form input:focus,
+.categorize-form textarea:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+}
+
+.categorize-button {
+  background-color: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 12px 16px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  align-self: flex-start;
+  margin-top: 8px;
+}
+
+.categorize-button:hover {
+  background-color: #2563eb;
+}
+
+.user-role {
+  font-size: 0.85rem;
+  color: #64748b;
+  margin-left: 4px;
+}
+
+/* Responsive Styles */
+@media (max-width: 992px) {
+  .patient-info-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .doctor-portal-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+  
+  .disease-filter {
+    width: 100%;
+  }
+  
+  .disease-filter select {
+    flex: 1;
+  }
+  
+  .patients-table th,
+  .patients-table td {
+    padding: 12px 8px;
+    font-size: 0.9rem;
+  }
+  
+  .disease-tag {
+    font-size: 0.75rem;
+  }
+  
+  .view-patient-btn {
+    padding: 6px 10px;
+    font-size: 0.8rem;
+  }
+}
+
+@media (max-width: 576px) {
+  .patients-table {
+    min-width: 600px;
+  }
+}
