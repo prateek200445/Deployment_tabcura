@@ -57,10 +57,12 @@ function buildSymptomFallback(payload) {
 }
 
 function getGoogleOAuthClient() {
+  const redirectUri = process.env.GOOGLE_REDIRECT_URI;
+  console.log('OAuth Debug - Using Redirect URI:', redirectUri);
   return new google.auth.OAuth2(
     process.env.GOOGLE_CLIENT_ID,
     process.env.GOOGLE_CLIENT_SECRET,
-    process.env.GOOGLE_REDIRECT_URI
+    redirectUri
   );
 }
 
@@ -75,7 +77,8 @@ async function getGoogleCalendarAuthUrlForUser(user) {
       'https://www.googleapis.com/auth/userinfo.email',
       'https://www.googleapis.com/auth/userinfo.profile'
     ],
-    state
+    state,
+    redirect_uri: process.env.GOOGLE_REDIRECT_URI
   });
 }
 
@@ -2184,7 +2187,10 @@ app.get('/api/google/calendar/callback', async (req, res) => {
     }
 
     const oauth2Client = getGoogleOAuthClient();
-    const { tokens } = await oauth2Client.getToken(code);
+    const { tokens } = await oauth2Client.getToken({
+      code: code,
+      redirect_uri: process.env.GOOGLE_REDIRECT_URI
+    });
     oauth2Client.setCredentials(tokens);
 
     let googleEmail = null;
