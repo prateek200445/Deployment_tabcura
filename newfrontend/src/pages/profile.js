@@ -597,6 +597,10 @@ const Profile = ({ user = {}, onLogout, onNavigateToSubscription }) => {
     }
 
     try {
+      console.log(`[SaveRecord] Saving record with source: ${saveRecordSource}`, {
+        hasAnalysis: !!analysisData,
+        medicationCount: analysisData?.medications?.length || 0
+      });
       setIsSavingRecord(true);
       setSaveRecordError('');
 
@@ -771,6 +775,8 @@ const Profile = ({ user = {}, onLogout, onNavigateToSubscription }) => {
 
       setShowSaveRecordModal(false);
       setShowAIModal(false);
+      setAiAnalysisResult(null);
+      setReportAnalysisResult(null);
       
       // Navigate to Prescriptions tab so user immediately sees their saved record
       if (saveRecordSource === 'prescription') {
@@ -1954,7 +1960,8 @@ const Profile = ({ user = {}, onLogout, onNavigateToSubscription }) => {
                     if (!isMedication) return false;
                     const issueDate = new Date(r.prescriptionDate || r.createdAt);
                     const diffDays = (new Date() - issueDate) / (1000 * 60 * 60 * 24);
-                    return diffDays <= 33;
+                    // Show all records for now to avoid confusion with the 33-day filter
+                    return true;
                   })
                   .map((record, index) => {
                     const startDate = new Date(record.prescriptionDate || record.createdAt);
