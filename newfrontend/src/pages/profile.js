@@ -578,7 +578,7 @@ const Profile = ({ user = {}, onLogout, onNavigateToSubscription }) => {
       return;
     }
 
-    const analysisData = saveRecordSource === 'report' ? reportAnalysisResult : aiAnalysisResult;
+    const analysisData = saveRecordSource === 'report' ? reportAnalysisResult : (saveRecordSource === 'prescription' ? aiAnalysisResult : null);
 
     // Future date validation (handles DD/MM/YYYY format from AI output)
     if (analysisData && analysisData.date) {
@@ -895,6 +895,8 @@ const Profile = ({ user = {}, onLogout, onNavigateToSubscription }) => {
           hospitalName: '',
           diseaseName: ''
         });
+        setAiAnalysisResult(null);
+        setReportAnalysisResult(null);
         setSaveRecordError('');
         setShowSaveRecordModal(true);
         if (directRecordInputRef.current) {
