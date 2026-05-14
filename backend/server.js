@@ -57,8 +57,8 @@ function buildSymptomFallback(payload) {
 }
 
 function getGoogleOAuthClient() {
-  const redirectUri = process.env.GOOGLE_REDIRECT_URI;
-  console.log('OAuth Debug - Using Redirect URI:', redirectUri);
+  const redirectUri = process.env.GOOGLE_REDIRECT_URI || 'https://deployment-tabcura.onrender.com/api/google/calendar/callback';
+  console.log('OAuth Debug - Final Redirect URI being used:', redirectUri);
   return new google.auth.OAuth2(
     process.env.GOOGLE_CLIENT_ID,
     process.env.GOOGLE_CLIENT_SECRET,
@@ -78,7 +78,7 @@ async function getGoogleCalendarAuthUrlForUser(user) {
       'https://www.googleapis.com/auth/userinfo.profile'
     ],
     state,
-    redirect_uri: process.env.GOOGLE_REDIRECT_URI
+    redirect_uri: process.env.GOOGLE_REDIRECT_URI || 'https://deployment-tabcura.onrender.com/api/google/calendar/callback'
   });
 }
 
@@ -2189,7 +2189,7 @@ app.get('/api/google/calendar/callback', async (req, res) => {
     const oauth2Client = getGoogleOAuthClient();
     const { tokens } = await oauth2Client.getToken({
       code: code,
-      redirect_uri: process.env.GOOGLE_REDIRECT_URI
+      redirect_uri: process.env.GOOGLE_REDIRECT_URI || 'https://deployment-tabcura.onrender.com/api/google/calendar/callback'
     });
     oauth2Client.setCredentials(tokens);
 
