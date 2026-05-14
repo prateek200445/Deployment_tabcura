@@ -33,30 +33,21 @@ const Appointment = require('./models/Appointment');
 // Helper functions
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
-async function generateContentWithRetry(prompt, options = { retries: 2, baseDelayMs: 1500 }) {
-  let attempt = 0;
-  
-  // Try primary model first
-  while (attempt <= options.retries) {
+async function generateContentWithRetry(prompt) {
+  // Try primary model once
+  try {
+    console.log(`[AI Logic] Attempting with primary model (gemini-2.5-flash)...`);
+    return await primaryModel.generateContent(prompt);
+  } catch (error) {
+    console.error(`[AI Logic] Primary model failed:`, error.message);
+    
+    // Switch immediately to fallback model
+    console.warn('[AI Logic] Switching immediately to fallback model (gemma-4-26b-a4b-it)...');
     try {
-      console.log(`[AI Logic] Attempting with primary model (gemini-2.5-flash) - attempt ${attempt + 1}`);
-      return await primaryModel.generateContent(prompt);
-    } catch (error) {
-      console.error(`[AI Logic] Primary model error (attempt ${attempt + 1}):`, error.message);
-      
-      // If we've exhausted primary retries OR it's a specific "limit exhausted" error (like 429 or 503)
-      if (attempt === options.retries || error.message?.includes('503') || error.message?.includes('429') || error.message?.includes('quota')) {
-        console.warn('[AI Logic] Switching to fallback model (gemma-4-26b-a4b-it)...');
-        try {
-          return await fallbackModel.generateContent(prompt);
-        } catch (fallbackError) {
-          console.error('[AI Logic] Fallback model also failed:', fallbackError.message);
-          throw fallbackError;
-        }
-      }
-      
-      attempt++;
-      await new Promise(resolve => setTimeout(resolve, options.baseDelayMs * attempt));
+      return await fallbackModel.generateContent(prompt);
+    } catch (fallbackError) {
+      console.error('[AI Logic] Fallback model also failed:', fallbackError.message);
+      throw fallbackError;
     }
   }
 }
