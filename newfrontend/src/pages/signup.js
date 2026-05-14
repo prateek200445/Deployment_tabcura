@@ -134,8 +134,14 @@ const SignUp = ({ onBackToLanding, onGoToLogin, onGoToProfile }) => {
 
       console.log('Registration successful:', data);
       
-      // Navigate to profile page with the new user data
-      onGoToProfile({
+      // Save token to authenticate subsequent API calls
+      if (data.token) {
+        localStorage.setItem('token', data.token);
+      }
+      
+      // Navigate to profile page with the new user data including ID
+      onGoToProfile(data.user || {
+        id: data.user?.id,
         name: `${formData.firstName} ${formData.lastName}`,
         email: formData.email,
         username: formData.username

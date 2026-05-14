@@ -565,9 +565,13 @@ app.post('/api/users/register', async (req, res) => {
     const savedUser = await newUser.save();
     console.log('User registered successfully:', savedUser.email);
     
+    // Sign a JWT token for the new user
+    const token = jwt.sign({ id: String(savedUser._id), email: savedUser.email }, process.env.JWT_SECRET || 'secret', { expiresIn: '7d' });
+
     // Return success response
     return res.status(201).json({
       success: true,
+      token,
       user: {
         id: savedUser._id,
         name: `${savedUser.firstName} ${savedUser.lastName}`,
