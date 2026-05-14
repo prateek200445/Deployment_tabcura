@@ -1295,7 +1295,7 @@ Rules:
 Return a JSON object with this exact structure:
 {
   "type": "lab_report" or "prescription",
-  "date": "document date",
+  "date": "document date in DD/MM/YYYY format",
   "doctor": "doctor name",
   "hospitalName": "hospital name if available, otherwise 'Not specified', it can be finded by the key words such as hospital,clinic,care home etc",
   "diseaseName": "diagnosis or condition if available, otherwise 'Not specified'",
@@ -1318,7 +1318,8 @@ Return a JSON object with this exact structure:
   ],
   "documents_analyzed": ${fileCount},
   "summary": "A brief, empathetic introductory message addressed to the patient explaining the condition and treatment plan in a reassuring tone (e.g. 'Hello Arjun, please don't be concerned...'). Do NOT include bullet points, precautions, or lists here. Keep it to 8-10 sentences."
-}`
+},
+"IMPORTANT: All dates MUST be interpreted and returned in Indian format (DD/MM/YYYY). For example, 04/05/2026 is May 4th, NOT April 5th."`
         }]
       }]
     };

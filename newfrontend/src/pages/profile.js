@@ -1960,8 +1960,7 @@ const Profile = ({ user = {}, onLogout, onNavigateToSubscription }) => {
                     if (!isMedication) return false;
                     const issueDate = new Date(r.prescriptionDate || r.createdAt);
                     const diffDays = (new Date() - issueDate) / (1000 * 60 * 60 * 24);
-                    // Show all records for now to avoid confusion with the 33-day filter
-                    return true;
+                    return diffDays <= 33;
                   })
                   .map((record, index) => {
                     const startDate = new Date(record.prescriptionDate || record.createdAt);
