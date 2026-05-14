@@ -1175,7 +1175,7 @@ const model = genAI.getGenerativeModel({
     topP: 0.1,
     topK: 16
   },
-  systemInstruction: "You are a medical document analyzer. Produce accurate, patient-safe, structured JSON for lab reports, prescriptions, and medical reports."
+  systemInstruction: "You are a medical document analyzer. Produce accurate, patient-safe, structured JSON for lab reports, prescriptions, and medical reports. Always extract medications with their full names, dosages, frequencies, and durations if present. Pay close attention to headings like 'Rx:', 'Medications:', or numbered lists."
 });
 
 // Update the extractTextFromPDF function
@@ -1291,6 +1291,8 @@ Rules:
 2. If it's a prescription, include medication details, hospital name, disease name, precautions, and any pre-op/post-op care instructions.
 3. Always identify the document type, date, and doctor's name
 4. Format results based on document type
+5. Identify medications even if they are listed under 'Rx:', 'Medications:', 'Treatment:', or simply as a numbered list. Include the full name (e.g., 'Paracetamol 650 mg').
+6. IMPORTANT: All dates MUST be interpreted and returned in Indian format (DD/MM/YYYY). For example, 04/05/2026 is May 4th, NOT April 5th.
 
 Return a JSON object with this exact structure:
 {
@@ -1324,6 +1326,7 @@ Return a JSON object with this exact structure:
       }]
     };
 
+    console.log('[Gemini Debug] Extracted Document Text:', documentText.substring(0, 500) + '...');
     const result = await generateContentWithRetry(prompt, { retries: 2, baseDelayMs: 1500 });
     const responseText = result.response.text();
     
