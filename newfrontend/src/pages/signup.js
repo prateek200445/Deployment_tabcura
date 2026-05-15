@@ -10,7 +10,8 @@ const SignUp = ({ onBackToLanding, onGoToLogin, onGoToProfile }) => {
     password: '',
     confirmPassword: '',
     dateOfBirth: '',
-    gender: ''
+    gender: '',
+    isDoctor: false
   });
   
   const [error, setError] = useState('');
@@ -18,10 +19,10 @@ const SignUp = ({ onBackToLanding, onGoToLogin, onGoToProfile }) => {
   const [isLoading, setIsLoading] = useState(false);
   
   const handleChange = (e) => {
-    const { name, value } = e.target;
+    const { name, value, type, checked } = e.target;
     setFormData(prevData => ({
       ...prevData,
-      [name]: value
+      [name]: type === 'checkbox' ? checked : value
     }));
   };
 
@@ -77,7 +78,8 @@ const SignUp = ({ onBackToLanding, onGoToLogin, onGoToProfile }) => {
         username: formData.username,
         password: formData.password,
         dateOfBirth: formData.dateOfBirth,
-        gender: formData.gender
+        gender: formData.gender,
+        isDoctor: formData.isDoctor
       };
 
       console.log('Sending registration data to API:', userData);
@@ -275,6 +277,21 @@ const SignUp = ({ onBackToLanding, onGoToLogin, onGoToProfile }) => {
           className="form-input"
           disabled={isLoading}
         />
+      </div>
+
+      <div className="form-group checkbox-group" style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '10px', marginBottom: '20px' }}>
+        <input
+          type="checkbox"
+          id="isDoctor"
+          name="isDoctor"
+          checked={formData.isDoctor}
+          onChange={handleChange}
+          disabled={isLoading}
+          style={{ width: '20px', height: '20px' }}
+        />
+        <label htmlFor="isDoctor" style={{ margin: 0, cursor: 'pointer', fontWeight: '500' }}>
+          I am a healthcare professional (Doctor)
+        </label>
       </div>
 
       {error && <div className="error-message">{error}</div>}

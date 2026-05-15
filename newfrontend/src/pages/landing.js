@@ -1,7 +1,7 @@
 import React from 'react';
 import './landing.css';
 
-const Landing = ({ onLogin, onSignup, onGetStarted }) => {
+const Landing = ({ onLogin, onSignup, onGetStarted, onDoctorPortal }) => {
   return (
     <div className="landing-container">
       {/* Navigation */}
@@ -16,7 +16,7 @@ const Landing = ({ onLogin, onSignup, onGetStarted }) => {
         <div className="nav-auth">
           <button onClick={onLogin} className="login-button">Login</button>
           <button onClick={onSignup} className="signup-button">Sign Up</button>
-          <button onClick={() => onLogin('doctor')} className="doctor-button">Doctor Portal</button>
+          <button onClick={onDoctorPortal} className="doctor-button">Doctor Portal</button>
         </div>
       </nav>
 
@@ -186,7 +186,7 @@ const Landing = ({ onLogin, onSignup, onGetStarted }) => {
                 </div>
               </li>
             </ul>
-            <button onClick={() => onLogin('doctor')} className="doctor-cta-button">
+            <button onClick={onDoctorPortal} className="doctor-cta-button">
               Access Doctor Portal
             </button>
           </div>

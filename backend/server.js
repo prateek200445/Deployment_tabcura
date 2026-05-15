@@ -530,7 +530,7 @@ app.post('/api/users/register', async (req, res) => {
       });
     }
     
-    const { firstName, lastName, email, username, password, dateOfBirth, gender } = req.body;
+    const { firstName, lastName, email, username, password, dateOfBirth, gender, isDoctor } = req.body;
     
     // Validate required fields
     if (!firstName || !lastName || !email || !username || !password) {
@@ -567,7 +567,8 @@ app.post('/api/users/register', async (req, res) => {
       username,
       password: hashedPassword,
       dateOfBirth,
-      gender
+      gender,
+      isDoctor: !!isDoctor
     });
 
     // Save user to database

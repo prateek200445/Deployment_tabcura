@@ -5,6 +5,7 @@ import SignUp from './pages/signup';
 import Profile from './pages/profile';
 import Subscription from './pages/subscription';
 import DoctorPortal from './pages/doctorPortal';
+import DoctorComingSoon from './pages/doctorComingSoon';
 
 const App = () => {
   const [currentPage, setCurrentPage] = useState('landing');
@@ -87,6 +88,14 @@ const App = () => {
     setCurrentPage('doctorPortal');
   };
 
+  const navigateToUserDashboard = () => {
+    if (userData) {
+      setCurrentPage('profile');
+    } else {
+      navigateToLogin('user');
+    }
+  };
+
   const handleLogout = () => {
     // Clear user state and stored auth token
     setUserData(null);
@@ -126,15 +135,17 @@ const App = () => {
           onBackToProfile={() => setCurrentPage(userData?.isDoctor ? 'doctorPortal' : 'profile')}
         />;
       case 'doctorPortal':
-        return <DoctorPortal
+        return <DoctorComingSoon
           user={userData}
           onLogout={handleLogout}
+          onSwitchToUserDashboard={navigateToUserDashboard}
         />;
       default:
         return <Landing 
           onLogin={navigateToLogin} 
           onSignup={navigateToSignup} 
           onGetStarted={navigateToSignup}
+          onDoctorPortal={navigateToDoctorPortal}
         />;
     }
   };
