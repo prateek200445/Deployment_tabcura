@@ -217,7 +217,7 @@ const DoctorPortal = ({ user = {}, onLogout }) => {
       {/* Sidebar */}
       <div className="sidebar">
         <div className="sidebar-header">
-          <div className="logo"><img src="/tabcura.png" alt="TabCura Dashboard Preview" /></div>
+          <div className="logo"><img src={process.env.PUBLIC_URL + "/tabcura.png"} alt="TabCura Logo" /></div>
         </div>
         <div className="sidebar-menu">
           <button 

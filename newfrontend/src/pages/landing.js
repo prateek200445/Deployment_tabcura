@@ -6,7 +6,7 @@ const Landing = ({ onLogin, onSignup, onGetStarted }) => {
     <div className="landing-container">
       {/* Navigation */}
       <nav className="landing-nav">
-        <div className="nav-logo"> <img src="/tabcura.png" alt="TabCura Dashboard Preview" /></div>
+        <div className="nav-logo"> <img src={process.env.PUBLIC_URL + "/tabcura.png"} alt="TabCura Logo" /></div>
         <div className="nav-links">
           <a href="#features">Features</a>
           <a href="#how-it-works">How it Works</a>
@@ -45,7 +45,7 @@ const Landing = ({ onLogin, onSignup, onGetStarted }) => {
           </div>
         </div>
         <div className="hero-image">
-          <img src="/dashboard.png" alt="TabCura Dashboard Preview" />
+          <img src={process.env.PUBLIC_URL + "/dashboard.png"} alt="TabCura Dashboard Preview" />
           {/* Note: You'll need to add this image to your public directory */}
         </div>
       </section>
@@ -159,7 +159,7 @@ const Landing = ({ onLogin, onSignup, onGetStarted }) => {
         </div>
         <div className="doctor-portal-content">
           <div className="doctor-portal-image">
-            <img src="/doctor-portal.png" alt="Doctor Portal Interface" />
+            <img src={process.env.PUBLIC_URL + "/doctor_portal.jpg"} alt="Doctor Portal Interface" />
           </div>
           <div className="doctor-portal-features">
             <h3>For Healthcare Providers</h3>
