@@ -171,6 +171,34 @@ const Profile = ({ user = {}, onLogout, onNavigateToSubscription }) => {
     };
   }, [safeUser.id]);
 
+  // Effect to restore AI analysis state after Google Calendar authentication redirect
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('googleCalendar') === 'connected') {
+      console.log('Detected return from Google Calendar auth. Attempting to restore analysis state...');
+      const savedAnalysis = localStorage.getItem('pending_ai_analysis');
+      if (savedAnalysis) {
+        try {
+          const parsedAnalysis = JSON.parse(savedAnalysis);
+          setAiAnalysisResult(parsedAnalysis);
+          setShowAIModal(true);
+          setUploadedPrescription([]); // Clear files as we only have the result now
+          
+          // Clear the saved analysis from localStorage
+          localStorage.removeItem('pending_ai_analysis');
+          
+          // Clean up the URL query parameters without refreshing the page
+          const newUrl = window.location.pathname + window.location.hash;
+          window.history.replaceState({}, document.title, newUrl);
+          
+          setCalendarSyncMessage('Google Calendar connected! You can now sync your prescription.');
+        } catch (e) {
+          console.error('Error restoring pending analysis:', e);
+        }
+      }
+    }
+  }, []);
+
   const fetchActivityAnalytics = async (days = 7) => {
     try {
       if (!safeUser.id) return;
@@ -1068,6 +1096,11 @@ const Profile = ({ user = {}, onLogout, onNavigateToSubscription }) => {
       const data = await response.json();
 
       if (data.requiresGoogleAuth && data.authUrl) {
+        // Persist the current analysis result so it can be restored after the user logs in
+        if (aiAnalysisResult) {
+          localStorage.setItem('pending_ai_analysis', JSON.stringify(aiAnalysisResult));
+        }
+        
         window.open(data.authUrl, '_blank', 'noopener,noreferrer');
         setCalendarSyncMessage('Connect Google Calendar in the new tab, then click the sync button again.');
         setGoogleCalendarConnected(false);
