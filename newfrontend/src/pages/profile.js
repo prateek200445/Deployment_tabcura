@@ -44,6 +44,7 @@ const Profile = ({ user = {}, onLogout, onNavigateToSubscription }) => {
   const [aiAnalysisResult, setAiAnalysisResult] = useState(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isSyncingCalendar, setIsSyncingCalendar] = useState(false);
+  const [restoredDocumentUrl, setRestoredDocumentUrl] = useState('');
   const [googleCalendarConnected, setGoogleCalendarConnected] = useState(false);
   const [googleCalendarEmail, setGoogleCalendarEmail] = useState('');
   const [calendarSyncMessage, setCalendarSyncMessage] = useState('');
@@ -190,6 +191,12 @@ const Profile = ({ user = {}, onLogout, onNavigateToSubscription }) => {
           // Clean up the URL query parameters without refreshing the page
           const newUrl = window.location.pathname + window.location.hash;
           window.history.replaceState({}, document.title, newUrl);
+          
+          const savedDocUrl = localStorage.getItem('pending_document_url');
+          if (savedDocUrl) {
+            setRestoredDocumentUrl(savedDocUrl);
+            localStorage.removeItem('pending_document_url');
+          }
           
           setCalendarSyncMessage('Google Calendar connected! You can now sync your prescription.');
         } catch (e) {
@@ -655,23 +662,30 @@ const Profile = ({ user = {}, onLogout, onNavigateToSubscription }) => {
            }
            await fetchUserDocuments();
         }
-      } else if (saveRecordSource === 'prescription' && uploadedPrescription && uploadedPrescription.length > 0) {
-        const formData = new FormData();
-        formData.append('document', uploadedPrescription[0]);
-        formData.append('userId', safeUser.id);
-        formData.append('documentType', 'Prescription');
+      } else if (saveRecordSource === 'prescription') {
+        if (restoredDocumentUrl) {
+          // Use the URL we pre-saved before the Google redirect
+          savedDocumentUrl = restoredDocumentUrl;
+          console.log('[SaveRecord] Using restored document URL:', savedDocumentUrl);
+        } else if (uploadedPrescription && uploadedPrescription.length > 0) {
+          // Normal flow: upload the local file
+          const formData = new FormData();
+          formData.append('document', uploadedPrescription[0]);
+          formData.append('userId', safeUser.id);
+          formData.append('documentType', 'Prescription');
 
-        const uploadResponse = await fetch(`${API_BASE_URL}/api/documents/upload`, {
-          method: 'POST',
-          body: formData,
-        });
+          const uploadResponse = await fetch(`${API_BASE_URL}/api/documents/upload`, {
+            method: 'POST',
+            body: formData,
+          });
 
-        if (uploadResponse.ok) {
-           const uploadData = await uploadResponse.json();
-           if (uploadData.document && uploadData.document.url) {
-             savedDocumentUrl = uploadData.document.url;
-           }
-           await fetchUserDocuments();
+          if (uploadResponse.ok) {
+             const uploadData = await uploadResponse.json();
+             if (uploadData.document && uploadData.document.url) {
+               savedDocumentUrl = uploadData.document.url;
+             }
+             await fetchUserDocuments();
+          }
         }
       } else if (saveRecordSource === 'report' && uploadedReport) {
         const fileToUpload = Array.isArray(uploadedReport) ? uploadedReport[0] : uploadedReport;
@@ -741,6 +755,7 @@ const Profile = ({ user = {}, onLogout, onNavigateToSubscription }) => {
 
       await fetchUserRecords();
       await fetchActivityAnalytics();
+      setRestoredDocumentUrl(''); // Clear the restored URL after successful save
 
       // Auto-create follow-up appointment if medications have duration
       const medications = Array.isArray(analysisData?.medications) ? analysisData.medications : [];
@@ -1099,6 +1114,32 @@ const Profile = ({ user = {}, onLogout, onNavigateToSubscription }) => {
         // Persist the current analysis result so it can be restored after the user logs in
         if (aiAnalysisResult) {
           localStorage.setItem('pending_ai_analysis', JSON.stringify(aiAnalysisResult));
+        }
+        
+        // Also pre-upload and persist the document URL if we have a file
+        // This is necessary because File objects cannot be stored in localStorage
+        if (uploadedPrescription && uploadedPrescription.length > 0) {
+          try {
+            const formData = new FormData();
+            formData.append('document', uploadedPrescription[0]);
+            formData.append('userId', safeUser.id);
+            formData.append('documentType', 'Prescription');
+
+            const uploadResponse = await fetch(`${API_BASE_URL}/api/documents/upload`, {
+              method: 'POST',
+              body: formData,
+            });
+
+            if (uploadResponse.ok) {
+              const uploadData = await uploadResponse.json();
+              if (uploadData.document && uploadData.document.url) {
+                localStorage.setItem('pending_document_url', uploadData.document.url);
+                console.log('Pre-saved document for restoration:', uploadData.document.url);
+              }
+            }
+          } catch (uploadErr) {
+            console.error('Failed to pre-save document before redirect:', uploadErr);
+          }
         }
         
         window.open(data.authUrl, '_blank', 'noopener,noreferrer');
