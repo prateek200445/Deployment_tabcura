@@ -25,6 +25,7 @@ app.use(express.json());
 
 // Import models
 const User = require('./models/User');
+const Doctor = require('./models/Doctor');
 const Document = require('./models/Document');
 const MedicalRecord = require('./models/MedicalRecord');
 const AnalysisEvent = require('./models/AnalysisEvent');
@@ -167,6 +168,21 @@ function getUserIdFromReq(req) {
     if (!token) return null;
     const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret');
     return decoded && decoded.id ? String(decoded.id) : null;
+  } catch (err) {
+    return null;
+  }
+}
+
+function getAuthFromReq(req) {
+  try {
+    const auth = req.headers && (req.headers['authorization'] || req.headers['Authorization']);
+    if (!auth) return null;
+    const parts = auth.split(' ');
+    if (parts.length !== 2) return null;
+    const token = parts[1];
+    if (!token) return null;
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret');
+    return decoded && decoded.id ? { id: String(decoded.id), isDoctor: !!decoded.isDoctor } : null;
   } catch (err) {
     return null;
   }
@@ -431,22 +447,25 @@ app.get('/api/users/username/:username', async (req, res) => {
   try {
     const username = req.params.username;
     
-    const user = await User.findOne({ username });
+    let account = await User.findOne({ username });
+    if (!account) {
+      account = await Doctor.findOne({ username });
+    }
     
-    if (!user) {
+    if (!account) {
       return res.status(404).json({ message: 'User not found' });
     }
     
-    // Return user without sensitive information
+    // Return account without sensitive information
     res.status(200).json({
       success: true,
       user: {
-        id: user._id,
-        name: `${user.firstName} ${user.lastName}`,
-        email: user.email,
-        username: user.username,
-        gender: user.gender,
-        dateOfBirth: user.dateOfBirth
+        id: account._id,
+        name: `${account.firstName} ${account.lastName}`,
+        email: account.email,
+        username: account.username,
+        isDoctor: !!account.isDoctor,
+        specialty: account.specialty || null
       }
     });
     
@@ -464,22 +483,25 @@ app.get('/api/users/:id', async (req, res) => {
   try {
     const userId = req.params.id;
     
-    const user = await User.findById(userId);
+    let account = await User.findById(userId);
+    if (!account) {
+      account = await Doctor.findById(userId);
+    }
     
-    if (!user) {
+    if (!account) {
       return res.status(404).json({ message: 'User not found' });
     }
     
-    // Return user without sensitive information
+    // Return account without sensitive information
     res.status(200).json({
       success: true,
       user: {
-        id: user._id,
-        name: `${user.firstName} ${user.lastName}`,
-        email: user.email,
-        username: user.username,
-        gender: user.gender,
-        dateOfBirth: user.dateOfBirth
+        id: account._id,
+        name: `${account.firstName} ${account.lastName}`,
+        email: account.email,
+        username: account.username,
+        isDoctor: !!account.isDoctor,
+        specialty: account.specialty || null
       }
     });
     
@@ -530,7 +552,7 @@ app.post('/api/users/register', async (req, res) => {
       });
     }
     
-    const { firstName, lastName, email, username, password, dateOfBirth, gender, isDoctor } = req.body;
+    const { firstName, lastName, email, username, password, dateOfBirth, gender, isDoctor, specialty, licenseNumber, hospital } = req.body;
     
     // Validate required fields
     if (!firstName || !lastName || !email || !username || !password) {
@@ -539,54 +561,68 @@ app.post('/api/users/register', async (req, res) => {
         message: 'Please provide all required fields'
       });
     }
-    
-    // Check if user already exists
-    const existingUser = await User.findOne({ 
-      $or: [
-        { email },
-        { username }
-      ] 
-    });
-    
-    if (existingUser) {
-      console.log('User already exists:', existingUser.email);
-      return res.status(400).json({ 
-        message: 'User with this email or username already exists' 
+
+    if (isDoctor && (!specialty || !licenseNumber)) {
+      return res.status(400).json({
+        message: 'Doctors must provide specialty and license number'
       });
     }
     
-    // Hash password before saving
+    // Check if user/doctor already exists
+    const existingUser = await User.findOne({ $or: [{ email }, { username }] });
+    const existingDoctor = await Doctor.findOne({ $or: [{ email }, { username }, { licenseNumber }] });
+    
+    if (existingUser || existingDoctor) {
+      console.log('Account already exists');
+      return res.status(400).json({ 
+        message: 'Account with this email, username, or license number already exists' 
+      });
+    }
+    
+    // Hash password
     const saltRounds = parseInt(process.env.BCRYPT_SALT_ROUNDS || '10', 10);
     const hashedPassword = await bcrypt.hash(password, saltRounds);
 
-    // Create new user
-    const newUser = new User({
-      firstName,
-      lastName,
-      email,
-      username,
-      password: hashedPassword,
-      dateOfBirth,
-      gender,
-      isDoctor: !!isDoctor
-    });
+    let savedAccount;
+    if (isDoctor) {
+      // Create new doctor
+      const newDoctor = new Doctor({
+        firstName, lastName, email, username,
+        password: hashedPassword,
+        specialty, licenseNumber, hospital,
+        isDoctor: true
+      });
+      savedAccount = await newDoctor.save();
+    } else {
+      // Create new user
+      const newUser = new User({
+        firstName, lastName, email, username,
+        password: hashedPassword,
+        dateOfBirth, gender,
+        isDoctor: false
+      });
+      savedAccount = await newUser.save();
+    }
 
-    // Save user to database
-    const savedUser = await newUser.save();
-    console.log('User registered successfully:', savedUser.email);
+    console.log('Account registered successfully:', savedAccount.email);
     
-    // Sign a JWT token for the new user
-    const token = jwt.sign({ id: String(savedUser._id), email: savedUser.email }, process.env.JWT_SECRET || 'secret', { expiresIn: '7d' });
+    // Sign a JWT token
+    const token = jwt.sign({ 
+      id: String(savedAccount._id), 
+      email: savedAccount.email,
+      isDoctor: !!isDoctor 
+    }, process.env.JWT_SECRET || 'secret', { expiresIn: '7d' });
 
     // Return success response
     return res.status(201).json({
       success: true,
       token,
       user: {
-        id: savedUser._id,
-        name: `${savedUser.firstName} ${savedUser.lastName}`,
-        email: savedUser.email,
-        username: savedUser.username
+        id: savedAccount._id,
+        name: `${savedAccount.firstName} ${savedAccount.lastName}`,
+        email: savedAccount.email,
+        username: savedAccount.username,
+        isDoctor: !!isDoctor
       }
     });
     
@@ -604,38 +640,41 @@ app.post('/api/users/login', async (req, res) => {
   try {
     const { email, password, isDoctor } = req.body;
     
-    // Find user by email
-    const user = await User.findOne({ email });
+    // Find account by email in correct collection
+    let account;
+    if (isDoctor) {
+      account = await Doctor.findOne({ email });
+    } else {
+      account = await User.findOne({ email });
+    }
     
-    // Check if user exists and password matches using bcrypt
-    if (!user) {
+    if (!account) {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
 
-    const passwordMatches = await bcrypt.compare(password, user.password);
+    const passwordMatches = await bcrypt.compare(password, account.password);
     if (!passwordMatches) {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
     
-    // Check if trying to access doctor portal but not a doctor
-    if (isDoctor && !user.isDoctor) {
-      return res.status(403).json({ message: 'Not authorized as a healthcare provider' });
-    }
-    
-    // Sign a JWT token for the user
-    const token = jwt.sign({ id: String(user._id), email: user.email }, process.env.JWT_SECRET || 'secret', { expiresIn: '7d' });
+    // Sign a JWT token
+    const token = jwt.sign({ 
+      id: String(account._id), 
+      email: account.email,
+      isDoctor: !!account.isDoctor 
+    }, process.env.JWT_SECRET || 'secret', { expiresIn: '7d' });
 
     // Return user data with token
     res.status(200).json({
       success: true,
       token,
       user: {
-        id: user._id,
-        name: `${user.firstName} ${user.lastName}`,
-        email: user.email,
-        username: user.username,
-        isDoctor: user.isDoctor,
-        specialty: user.specialty
+        id: account._id,
+        name: `${account.firstName} ${account.lastName}`,
+        email: account.email,
+        username: account.username,
+        isDoctor: !!account.isDoctor,
+        specialty: account.specialty || null
       }
     });
     
@@ -677,7 +716,8 @@ app.post('/api/documents/upload', (req, res) => {
     try {
       const userIdFromBody = req.body.userId;
       const documentType = req.body.documentType;
-      const userId = userIdFromBody || getUserIdFromReq(req);
+      const authInfo = getUserIdFromReq(req);
+      const userId = userIdFromBody || (authInfo ? authInfo.id : null);
 
       // Validate userId
       if (!userId) {
@@ -685,16 +725,19 @@ app.post('/api/documents/upload', (req, res) => {
       }
       
       // Process document
-      User.findById(userId)
-        .then(user => {
-          if (!user) {
-            // Clean up file if user not found
+      const accountPromise = User.findById(userId)
+        .then(user => user || Doctor.findById(userId));
+
+      accountPromise
+        .then(account => {
+          if (!account) {
+            // Clean up file if account not found
             try {
               fs.unlinkSync(req.file.path);
             } catch (err) {
               console.error('Error removing file:', err);
             }
-            return res.status(404).json({ message: 'User not found' });
+            return res.status(404).json({ message: 'Account not found' });
           }
           
           // Create document record

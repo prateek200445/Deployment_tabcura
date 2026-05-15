@@ -1,467 +1,348 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import './doctorPortal.css';
 
 const DoctorPortal = ({ user = {}, onLogout }) => {
-  const [patients, setPatients] = useState([]);
-  const [filteredPatients, setFilteredPatients] = useState([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [activeMenu, setActiveMenu] = useState('dashboard');
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedDisease, setSelectedDisease] = useState('all');
-  const [showPatientModal, setShowPatientModal] = useState(false);
-  const [selectedPatient, setSelectedPatient] = useState(null);
-  const [newCategorization, setNewCategorization] = useState({ 
-    disease: '', 
-    notes: '' 
+  
+  // Doctor Profile State
+  const [doctorProfile, setDoctorProfile] = useState({
+    name: user?.name || "Dr. Rahul Sharma",
+    specs: user?.specialty || "(MD, MBBS)",
+    email: user?.email || "rahul.sharma@tabcura.com",
+    avatar: user?.name ? user.name.charAt(0) : "R",
+    hospital: "City General Hospital",
+    bio: "Senior Consultant with over 12 years of experience in clinical medicine."
   });
 
-  // Add a constant for the API base URL
-  const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
+  const [schedule, setSchedule] = useState([
+    { id: 1, time: "10:00 AM", patient: "Sarah Johnson", type: "Follow-up", status: "Confirmed" },
+    { id: 2, time: "10:30 AM", patient: "David Chen", type: "Initial Consult", status: "In-Progress" },
+    { id: 3, time: "11:15 AM", patient: "Emily Davis", type: "Procedure Post-Op", status: "Pending" },
+    { id: 4, time: "01:00 PM", patient: "Michael Brown", type: "Regular Checkup", status: "Confirmed" }
+  ]);
 
-  // Ensure user object has all required properties with defaults
-  const safeUser = {
-    id: user?.id || "",
-    name: user?.name || "Dr. Sarah Johnson",
-    email: user?.email || "dr.sarah@example.com",
-    username: user?.username || "dr.sarah",
-    specialty: user?.specialty || "Cardiologist"
-  };
+  const [patients, setPatients] = useState([
+    { id: 1, name: "Sarah Johnson", age: 34, gender: "Female", condition: "Post-Op Recovery", lastVisit: "2024-05-10" },
+    { id: 2, name: "David Chen", age: 45, gender: "Male", condition: "Hypertension", lastVisit: "2024-05-12" },
+    { id: 3, name: "Emily Davis", age: 28, gender: "Female", condition: "Annual Wellness", lastVisit: "2024-05-14" },
+    { id: 4, name: "Alex Reed", age: 52, gender: "Male", condition: "Type 2 Diabetes", lastVisit: "2024-05-08" }
+  ]);
 
-  useEffect(() => {
-    fetchPatients();
-  }, []);
+  const [pendingDocs, setPendingDocs] = useState([
+    { id: 1, name: "lab_results_A.pdf", patient: "Alex R." },
+    { id: 2, name: "prescription_refill_M.pdf", patient: "Mia K." },
+    { id: 3, name: "xray_report_J.jpeg", patient: "John D." }
+  ]);
 
-  useEffect(() => {
-    // Apply filtering when selectedDisease changes
-    if (selectedDisease === 'all') {
-      setFilteredPatients(patients);
-    } else {
-      setFilteredPatients(
-        patients.filter(patient => 
-          patient.diseases.some(d => d.name.toLowerCase() === selectedDisease.toLowerCase())
-        )
-      );
-    }
-  }, [selectedDisease, patients]);
+  const [prescriptions, setPrescriptions] = useState([
+    { id: 1, patient: "Sarah Johnson", med: "Amoxicillin", dosage: "500mg", status: "Active" },
+    { id: 2, patient: "David Chen", med: "Lisinopril", dosage: "10mg", status: "Active" },
+    { id: 3, patient: "Alex Reed", med: "Metformin", dosage: "850mg", status: "Renewal Due" }
+  ]);
 
-  useEffect(() => {
-    // Apply search filtering
-    if (searchTerm.trim() === '') {
-      // If search is empty, just apply disease filter
-      if (selectedDisease === 'all') {
-        setFilteredPatients(patients);
-      } else {
-        setFilteredPatients(
-          patients.filter(patient => 
-            patient.diseases.some(d => d.name.toLowerCase() === selectedDisease.toLowerCase())
-          )
-        );
-      }
-    } else {
-      // Apply both search and disease filter
-      const filtered = patients.filter(patient => {
-        const matchesSearch = (
-          patient.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          patient.email.toLowerCase().includes(searchTerm.toLowerCase())
-        );
-        
-        const matchesDisease = selectedDisease === 'all' || 
-          patient.diseases.some(d => d.name.toLowerCase() === selectedDisease.toLowerCase());
-          
-        return matchesSearch && matchesDisease;
-      });
-      
-      setFilteredPatients(filtered);
-    }
-  }, [searchTerm, selectedDisease, patients]);
+  const [modal, setModal] = useState({ show: false, title: '', content: '' });
 
-  const fetchPatients = async () => {
-    setIsLoading(true);
-    setError('');
-    
-    try {
-      // In a real app, you would fetch data from the API
-      // For now, we'll use mock data
-      const mockPatientsData = [
-        {
-          id: '1',
-          name: 'John Smith',
-          email: 'john@example.com',
-          age: 45,
-          documents: [
-            { id: 'd1', name: 'Blood Test Results', date: '2023-05-10', type: 'Lab Report' },
-            { id: 'd2', name: 'ECG Report', date: '2023-06-15', type: 'Diagnostic' }
-          ],
-          diseases: [
-            { name: 'Hypertension', diagnosedOn: '2022-01-15', notes: 'Moderate, controlled with medication' },
-            { name: 'Diabetes Type 2', diagnosedOn: '2021-03-22', notes: 'Early stage' }
-          ],
-          lastVisit: '2023-06-15'
-        },
-        {
-          id: '2',
-          name: 'Mary Johnson',
-          email: 'mary@example.com',
-          age: 38,
-          documents: [
-            { id: 'd3', name: 'MRI Report', date: '2023-04-20', type: 'Diagnostic' }
-          ],
-          diseases: [
-            { name: 'Migraine', diagnosedOn: '2020-11-10', notes: 'Chronic, triggered by stress' }
-          ],
-          lastVisit: '2023-04-20'
-        },
-        {
-          id: '3',
-          name: 'James Williams',
-          email: 'james@example.com',
-          age: 52,
-          documents: [
-            { id: 'd4', name: 'Cholesterol Panel', date: '2023-07-05', type: 'Lab Report' },
-            { id: 'd5', name: 'Stress Test Results', date: '2023-07-05', type: 'Diagnostic' }
-          ],
-          diseases: [
-            { name: 'Hypertension', diagnosedOn: '2019-08-14', notes: 'Well-controlled' },
-            { name: 'Hyperlipidemia', diagnosedOn: '2019-08-14', notes: 'On statins' }
-          ],
-          lastVisit: '2023-07-05'
-        },
-        {
-          id: '4',
-          name: 'Patricia Brown',
-          email: 'patricia@example.com',
-          age: 65,
-          documents: [
-            { id: 'd6', name: 'Echocardiogram', date: '2023-02-18', type: 'Diagnostic' }
-          ],
-          diseases: [
-            { name: 'Atrial Fibrillation', diagnosedOn: '2020-05-22', notes: 'Intermittent' },
-            { name: 'Hypertension', diagnosedOn: '2018-03-10', notes: 'Long history, requires multiple medications' }
-          ],
-          lastVisit: '2023-02-18'
-        }
-      ];
-      
-      setPatients(mockPatientsData);
-      setFilteredPatients(mockPatientsData);
-      
-      // In a real app, you would use this:
-      // const response = await fetch(`${API_BASE_URL}/api/doctor/patients`);
-      // if (!response.ok) throw new Error('Failed to fetch patients');
-      // const data = await response.json();
-      // setPatients(data.patients);
-      // setFilteredPatients(data.patients);
-      
-    } catch (error) {
-      console.error('Error fetching patients:', error);
-      setError('Failed to load patients. Please try again later.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const stats = [
+    { label: "Active Patients", value: patients.length, icon: "👥", color: "blue" },
+    { label: "Appointments Today", value: schedule.length, icon: "📅", color: "green" },
+    { label: "Medical Documents Reviewed", value: "212", icon: "📄", color: "purple" },
+    { label: "Associated Hospitals", value: "3", icon: "🏥", color: "orange" }
+  ];
 
-  const getAllDiseases = () => {
-    const diseasesSet = new Set();
-    
-    patients.forEach(patient => {
-      patient.diseases.forEach(disease => {
-        diseasesSet.add(disease.name);
-      });
+  const handleAction = (action, title) => {
+    setModal({
+      show: true,
+      title: action,
+      content: `Simulating ${action.toLowerCase()} for ${title}. This module is currently in Demo mode and will be fully linked to the backend production database shortly.`
     });
-    
-    return Array.from(diseasesSet).sort();
   };
 
-  const openPatientModal = (patient) => {
-    setSelectedPatient(patient);
-    setShowPatientModal(true);
-    setNewCategorization({ disease: '', notes: '' });
+  const updateProfile = (e) => {
+    const { name, value } = e.target;
+    setDoctorProfile({ ...doctorProfile, [name]: value });
   };
 
-  const closePatientModal = () => {
-    setShowPatientModal(false);
-    setSelectedPatient(null);
-  };
+  const renderDashboard = () => (
+    <>
+      <section className="stats-grid">
+        {stats.map((stat, idx) => (
+          <div key={idx} className="stat-card">
+            <div className={`stat-icon ${stat.color}`}>{stat.icon}</div>
+            <div className="stat-details">
+              <h3>{stat.value}</h3>
+              <p>{stat.label}</p>
+            </div>
+          </div>
+        ))}
+      </section>
 
-  const handleCategorizePatient = () => {
-    if (!newCategorization.disease.trim()) {
-      alert('Please enter a disease name');
-      return;
-    }
-
-    // In a real app, you would send this to the API
-    // For now, we'll just update our local state
-    const updatedPatients = patients.map(patient => {
-      if (patient.id === selectedPatient.id) {
-        return {
-          ...patient,
-          diseases: [
-            ...patient.diseases,
-            { 
-              name: newCategorization.disease, 
-              diagnosedOn: new Date().toISOString().split('T')[0], 
-              notes: newCategorization.notes 
-            }
-          ]
-        };
-      }
-      return patient;
-    });
-
-    setPatients(updatedPatients);
-    closePatientModal();
-  };
-
-  return (
-    <div className="dashboard-container">
-      {/* Sidebar */}
-      <div className="sidebar">
-        <div className="sidebar-header">
-          <div className="logo"><img src={process.env.PUBLIC_URL + "/tabcura.png"} alt="TabCura Logo" /></div>
+      <section className="ai-section">
+        <div className="section-header">
+          <h2>AI Doctor Assistant</h2>
+          <button className="btn-text" onClick={() => handleAction("AI Directory", "All Tools")}>View All Tools</button>
         </div>
-        <div className="sidebar-menu">
-          <button 
-            className="menu-item active"
-          >
-            <span className="menu-icon">👥</span>
-            <span>Patients</span>
-          </button>
-          <button 
-            className="menu-item"
-          >
-            <span className="menu-icon">📊</span>
-            <span>Analytics</span>
-          </button>
-          <button 
-            className="menu-item"
-          >
-            <span className="menu-icon">📆</span>
-            <span>Appointments</span>
-          </button>
-          <button 
-            className="menu-item"
-          >
-            <span className="menu-icon">💊</span>
-            <span>Prescriptions</span>
-          </button>
-          <button 
-            className="menu-item"
-          >
-            <span className="menu-icon">⚙️</span>
-            <span>Settings</span>
-          </button>
+        <div className="ai-grid">
+          {[
+            { id: 1, title: "Patient Health Summary", desc: "Digital breakdown of prescriptions", icon: "📄" },
+            { id: 2, title: "Lab Interpretation", desc: "Insights from health reports", icon: "🧪" },
+            { id: 3, title: "Protocol Suggester", desc: "Preliminary clinical guidance", icon: "⚕️" },
+            { id: 4, title: "AI Dictation Flow", desc: "Instant voice-to-text health notes", icon: "🎤" }
+          ].map(tool => (
+            <div key={tool.id} className="ai-card" onClick={() => handleAction("Opening AI Tool", tool.title)}>
+              <div className="ai-card-icon">{tool.icon}</div>
+              <h4>{tool.title}</h4>
+              <p>{tool.desc}</p>
+            </div>
+          ))}
         </div>
-        <div className="sidebar-footer">
-          <button className="logout-button" onClick={onLogout}>
-            <span className="menu-icon">🚪</span>
-            <span>Logout</span>
-          </button>
+      </section>
+
+      <section className="bottom-grid">
+        <div className="content-card">
+          <div className="card-header"><h2>Today's Schedule</h2></div>
+          <div className="card-content">
+            {schedule.slice(0, 3).map(item => (
+              <div key={item.id} className="list-item">
+                <div className="item-left">
+                  <span className="time-slot">{item.time}</span>
+                  <div className="item-info"><h4>{item.patient}</h4><p>{item.type}</p></div>
+                </div>
+                <button className="btn-small btn-primary" onClick={() => handleAction("Starting Session", item.patient)}>Start</button>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className="content-card">
+          <div className="card-header"><h2>Pending Reviews</h2></div>
+          <div className="card-content">
+            {pendingDocs.map(doc => (
+              <div key={doc.id} className="list-item">
+                <div className="item-left">
+                  <span className="doc-icon">📄</span>
+                  <div className="item-info"><h4>{doc.name}</h4><p>{doc.patient}</p></div>
+                </div>
+                <button className="btn-small btn-success" onClick={() => setPendingDocs(pendingDocs.filter(d => d.id !== doc.id))}>Approve</button>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+    </>
+  );
+
+  const renderPatients = () => (
+    <div className="content-card full-width">
+      <div className="card-header">
+        <h2>Patient Management</h2>
+        <button className="btn-primary btn-small" onClick={() => handleAction("Add Patient", "New Entry")}>+ New Patient</button>
+      </div>
+      <div className="table-container">
+        <table className="portal-table">
+          <thead>
+            <tr><th>Name</th><th>Age/Gender</th><th>Primary Condition</th><th>Last Visit</th><th>Actions</th></tr>
+          </thead>
+          <tbody>
+            {patients.map(p => (
+              <tr key={p.id}>
+                <td><strong>{p.name}</strong></td>
+                <td>{p.age} / {p.gender}</td>
+                <td><span className="badge-info">{p.condition}</span></td>
+                <td>{p.lastVisit}</td>
+                <td>
+                  <button className="btn-text-action" onClick={() => handleAction("Viewing Records", p.name)}>View</button>
+                  <button className="btn-text-action" onClick={() => handleAction("Editing Records", p.name)}>Edit</button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+
+  const renderSchedule = () => (
+    <div className="content-card full-width">
+      <div className="card-header">
+        <h2>Daily Agenda</h2>
+        <span className="date-label">{new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</span>
+      </div>
+      <div className="schedule-list-detailed">
+        {schedule.map(item => (
+          <div key={item.id} className="agenda-item">
+            <div className="agenda-time">{item.time}</div>
+            <div className="agenda-dot"></div>
+            <div className="agenda-content">
+              <div className="agenda-info">
+                <h4>{item.patient}</h4>
+                <p>{item.type} • <span className={`status-text ${item.status.toLowerCase()}`}>{item.status}</span></p>
+              </div>
+              <div className="agenda-actions">
+                <button className="btn-outline btn-small" onClick={() => handleAction("Reschedule", item.patient)}>Reschedule</button>
+                <button className="btn-primary btn-small" onClick={() => handleAction("Joining Call", item.patient)}>Join Call</button>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+
+  const renderPrescriptions = () => (
+    <div className="prescriptions-view">
+      <div className="section-header">
+        <h2>Recent Prescriptions</h2>
+        <button className="btn-primary btn-small" onClick={() => handleAction("New Prescription", "System")}>+ Create New</button>
+      </div>
+      <div className="presc-grid">
+        {prescriptions.map(p => (
+          <div key={p.id} className="presc-card">
+            <div className="presc-header">
+              <span className="presc-id">#RX-{1000 + p.id}</span>
+              <span className={`presc-status ${p.status.replace(' ', '-').toLowerCase()}`}>{p.status}</span>
+            </div>
+            <h3>{p.med}</h3>
+            <p className="presc-dosage">{p.dosage}</p>
+            <div className="presc-footer">
+              <span>Patient: {p.patient}</span>
+              <button className="btn-text" onClick={() => handleAction("Prescription Details", p.med)}>View Script</button>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+
+  const renderHospitals = () => (
+    <div className="hospitals-view">
+      <div className="section-header"><h2>Associated Healthcare Centers</h2></div>
+      <div className="hospital-grid">
+        {[
+          { name: "City General Hospital", dept: "Cardiology", location: "Downtown, Metro", rating: "4.8" },
+          { name: "TabCura Digital Clinic", dept: "Telemedicine", location: "Remote/Cloud", rating: "5.0" },
+          { name: "St. Mary's Medical", dept: "Emergency Care", location: "East Side", rating: "4.5" }
+        ].map((h, i) => (
+          <div key={i} className="hospital-card">
+            <div className="hospital-img-placeholder">🏥</div>
+            <h3>{h.name}</h3>
+            <p className="h-dept">{h.dept}</p>
+            <p className="h-loc">📍 {h.location}</p>
+            <div className="h-footer">
+              <span className="rating">⭐ {h.rating}</span>
+              <button className="btn-outline btn-small" onClick={() => handleAction("Viewing Hospital", h.name)}>View Facility</button>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+
+  const renderSettings = () => (
+    <div className="settings-view">
+      <div className="settings-card">
+        <div className="settings-header">
+          <h2>Professional Profile</h2>
+          <p>Manage your public identity and account security</p>
+        </div>
+        <div className="profile-edit-section">
+          <div className="avatar-upload">
+            <div className="current-avatar">{doctorProfile.avatar}</div>
+            <button className="btn-text">Change Photo</button>
+          </div>
+          <div className="settings-form">
+            <div className="form-row">
+              <div className="form-group">
+                <label>Full Name</label>
+                <input type="text" name="name" value={doctorProfile.name} onChange={updateProfile} />
+              </div>
+              <div className="form-group">
+                <label>Professional Title</label>
+                <input type="text" name="specs" value={doctorProfile.specs} onChange={updateProfile} />
+              </div>
+            </div>
+            <div className="form-group">
+              <label>Professional Email</label>
+              <input type="email" name="email" value={doctorProfile.email} onChange={updateProfile} />
+            </div>
+            <div className="form-group">
+              <label>Primary Hospital</label>
+              <input type="text" name="hospital" value={doctorProfile.hospital} onChange={updateProfile} />
+            </div>
+            <div className="form-group">
+              <label>Professional Bio</label>
+              <textarea name="bio" value={doctorProfile.bio} onChange={updateProfile} rows="4"></textarea>
+            </div>
+            <div className="settings-actions">
+              <button className="btn-primary" onClick={() => alert("Profile updated successfully (Simulation)")}>Save Changes</button>
+              <button className="btn-outline">Cancel</button>
+            </div>
+          </div>
         </div>
       </div>
-      
-      {/* Main Content */}
-      <div className="main-content">
-        {/* Header */}
-        <header className="dashboard-header">
-          <div className="page-title">
-            <h1>Doctor Portal</h1>
-          </div>
-          <div className="header-actions">
-            <div className="search-bar">
-              <input 
-                type="text" 
-                placeholder="Search patients..." 
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-              <button className="search-button">🔍</button>
+    </div>
+  );
+
+  return (
+    <div className="doctor-portal-container">
+      <aside className="doctor-sidebar">
+        <div className="sidebar-logo">
+          <img src={process.env.PUBLIC_URL + "/tabcura.png"} alt="TabCura" />
+        </div>
+        <nav className="sidebar-nav">
+          {[
+            { id: 'dashboard', label: 'My Dashboard', icon: '🏠' },
+            { id: 'patients', label: 'Patients', icon: '👥' },
+            { id: 'schedule', label: 'Schedule', icon: '📅' },
+            { id: 'prescriptions', label: 'Prescriptions', icon: '💊' },
+            { id: 'hospitals', label: 'Hospitals', icon: '🏥' },
+            { id: 'settings', label: 'Settings', icon: '⚙️' }
+          ].map(item => (
+            <button key={item.id} className={`nav-item ${activeMenu === item.id ? 'active' : ''}`} onClick={() => setActiveMenu(item.id)}>
+              <span className="nav-icon">{item.icon}</span><span>{item.label}</span>
+            </button>
+          ))}
+        </nav>
+        <div className="sidebar-footer"><button className="logout-btn" onClick={onLogout}><span className="nav-icon">🚪</span><span>Logout</span></button></div>
+      </aside>
+
+      <main className="doctor-main">
+        <header className="doctor-header">
+          <h1>{activeMenu.charAt(0).toUpperCase() + activeMenu.slice(1)}</h1>
+          <div className="header-right">
+            <div className="search-box">
+              <span className="search-icon">🔍</span>
+              <input type="text" placeholder="Quick search..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
             </div>
-            <div className="user-profile">
-              <div className="user-avatar">{safeUser.name.charAt(0)}</div>
-              <div className="user-name">{safeUser.name}</div>
-              <div className="user-role">{safeUser.specialty}</div>
+            <div className="status-badge"><span className="status-dot"></span><span>Active</span></div>
+            <div className="user-profile-menu">
+              <div className="profile-avatar">{doctorProfile.avatar}</div>
+              <div className="profile-info">
+                <span className="profile-name">{doctorProfile.name}</span>
+                <span className="profile-specs">{doctorProfile.specs}</span>
+              </div>
             </div>
           </div>
         </header>
-        
-        {/* Doctor Portal Content */}
-        <div className="dashboard-content">
-          <div className="doctor-portal-header">
-            <h2>Patient Management</h2>
-            <div className="disease-filter">
-              <label>Filter by Disease:</label>
-              <select
-                value={selectedDisease}
-                onChange={(e) => setSelectedDisease(e.target.value)}
-              >
-                <option value="all">All Diseases</option>
-                {getAllDiseases().map((disease) => (
-                  <option key={disease} value={disease}>{disease}</option>
-                ))}
-              </select>
-            </div>
-          </div>
-          
-          {isLoading ? (
-            <div className="loading-indicator">Loading patients...</div>
-          ) : error ? (
-            <div className="error-message">{error}</div>
-          ) : (
-            <div className="patients-table-container">
-              <table className="patients-table">
-                <thead>
-                  <tr>
-                    <th>Name</th>
-                    <th>Age</th>
-                    <th>Diseases</th>
-                    <th>Documents</th>
-                    <th>Last Visit</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredPatients.length > 0 ? (
-                    filteredPatients.map(patient => (
-                      <tr key={patient.id}>
-                        <td>
-                          <div className="patient-name">{patient.name}</div>
-                          <div className="patient-email">{patient.email}</div>
-                        </td>
-                        <td>{patient.age}</td>
-                        <td>
-                          <div className="disease-tags">
-                            {patient.diseases.map((disease, idx) => (
-                              <span key={idx} className="disease-tag">{disease.name}</span>
-                            ))}
-                          </div>
-                        </td>
-                        <td>{patient.documents.length} documents</td>
-                        <td>{patient.lastVisit}</td>
-                        <td>
-                          <button 
-                            className="view-patient-btn"
-                            onClick={() => openPatientModal(patient)}
-                          >
-                            View Details
-                          </button>
-                        </td>
-                      </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan="6" className="no-records">
-                        No patients match your search criteria
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          )}
+
+        <div className="portal-dynamic-content">
+          {activeMenu === 'dashboard' && renderDashboard()}
+          {activeMenu === 'patients' && renderPatients()}
+          {activeMenu === 'schedule' && renderSchedule()}
+          {activeMenu === 'prescriptions' && renderPrescriptions()}
+          {activeMenu === 'hospitals' && renderHospitals()}
+          {activeMenu === 'settings' && renderSettings()}
         </div>
-      </div>
-      
-      {/* Patient Detail Modal */}
-      {showPatientModal && selectedPatient && (
-        <div className="modal-overlay">
-          <div className="modal-container patient-modal">
+      </main>
+
+      {modal.show && (
+        <div className="portal-modal-overlay">
+          <div className="portal-modal">
             <div className="modal-header">
-              <h2>Patient Details: {selectedPatient.name}</h2>
-              <button className="close-button" onClick={closePatientModal}>×</button>
+              <h3>{modal.title}</h3>
+              <button className="close-modal" onClick={() => setModal({ ...modal, show: false })}>×</button>
             </div>
-            <div className="modal-content">
-              <div className="patient-info-grid">
-                <div className="patient-info-section">
-                  <h3>Patient Information</h3>
-                  <div className="info-group">
-                    <label>Name:</label>
-                    <span>{selectedPatient.name}</span>
-                  </div>
-                  <div className="info-group">
-                    <label>Email:</label>
-                    <span>{selectedPatient.email}</span>
-                  </div>
-                  <div className="info-group">
-                    <label>Age:</label>
-                    <span>{selectedPatient.age}</span>
-                  </div>
-                  <div className="info-group">
-                    <label>Last Visit:</label>
-                    <span>{selectedPatient.lastVisit}</span>
-                  </div>
-                </div>
-                
-                <div className="patient-info-section">
-                  <h3>Medical Conditions</h3>
-                  {selectedPatient.diseases.length > 0 ? (
-                    <div className="diseases-list">
-                      {selectedPatient.diseases.map((disease, idx) => (
-                        <div key={idx} className="disease-item">
-                          <div className="disease-header">
-                            <h4>{disease.name}</h4>
-                            <span className="diagnosed-date">Diagnosed: {disease.diagnosedOn}</span>
-                          </div>
-                          <p className="disease-notes">{disease.notes}</p>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p>No medical conditions recorded</p>
-                  )}
-                </div>
-              </div>
-              
-              <div className="patient-documents">
-                <h3>Documents</h3>
-                {selectedPatient.documents.length > 0 ? (
-                  <div className="documents-list">
-                    {selectedPatient.documents.map((doc) => (
-                      <div key={doc.id} className="document-item">
-                        <div className="document-icon">📄</div>
-                        <div className="document-details">
-                          <h4>{doc.name}</h4>
-                          <p>{doc.type} • {doc.date}</p>
-                        </div>
-                        <button className="view-document-btn">View</button>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p>No documents uploaded</p>
-                )}
-              </div>
-              
-              <div className="categorize-section">
-                <h3>Categorize Patient</h3>
-                <div className="categorize-form">
-                  <div className="form-group">
-                    <label htmlFor="disease">Disease:</label>
-                    <input 
-                      type="text" 
-                      id="disease" 
-                      value={newCategorization.disease}
-                      onChange={(e) => setNewCategorization({...newCategorization, disease: e.target.value})}
-                      placeholder="Enter disease name"
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label htmlFor="notes">Notes:</label>
-                    <textarea 
-                      id="notes" 
-                      value={newCategorization.notes}
-                      onChange={(e) => setNewCategorization({...newCategorization, notes: e.target.value})}
-                      placeholder="Enter notes about the condition"
-                    ></textarea>
-                  </div>
-                  <button 
-                    className="categorize-button"
-                    onClick={handleCategorizePatient}
-                  >
-                    Add Category
-                  </button>
-                </div>
-              </div>
-            </div>
+            <div className="modal-body"><p>{modal.content}</p></div>
+            <div className="modal-footer"><button className="btn-primary" onClick={() => setModal({ ...modal, show: false })}>Acknowledge</button></div>
           </div>
         </div>
       )}
